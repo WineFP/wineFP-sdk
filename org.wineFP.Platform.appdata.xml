@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="runtime">
+    <id>org.wineFP.Platform</id>
+    <metadata_license>CC0</metadata_license>
+    <name>wineFP Platform</name>
+    <summary>Shared libraries used by wineFP applications</summary>
+    <project_group>wineFP</project_group>
+    <url type="homepage">https://www.github.com/WineFP</url>
+</component>

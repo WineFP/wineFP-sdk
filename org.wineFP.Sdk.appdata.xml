@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="runtime">
+    <id>org.wineFP.Sdk</id>
+    <metadata_license>CC0</metadata_license>
+    <name>wineFP Software Development Kit</name>
+    <summary>Tools and headers for developing wineFP applications</summary>
+    <project_group>wineFP</project_group>
+    <url type="homepage">https://www.winepak.org</url>
+</component>

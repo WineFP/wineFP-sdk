@@ -1,0 +1,37 @@
+build-extension: true
+
+app-id: org.wineFP.Platform.Gecko
+branch: 5.0
+
+runtime: org.wineFP.Platform
+runtime-version: 5.0
+sdk: org.wineFP.Sdk
+
+separate-locales: false
+appstream-compose: false
+
+modules:
+  - name: wine-gecko
+    buildsystem: simple
+    build-commands:
+      - install -D --target-directory=${FLATPAK_DEST} wine_gecko-*.msi
+    sources:
+      - type: file
+        only-arches:
+          - x86_64
+        url: https://dl.winehq.org/wine/wine-gecko/2.47/wine_gecko-2.47-x86_64.msi
+        sha256: c565ea25e50ea953937d4ab01299e4306da4a556946327d253ea9b28357e4a7d
+      - type: file
+        url: http://dl.winehq.org/wine/wine-gecko/2.47/wine_gecko-2.47-x86.msi
+        sha256: 3b8a361f5d63952d21caafd74e849a774994822fb96c5922b01d554f1677643a
+
+  - name: appdata
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 --target-directory=${FLATPAK_DEST}/share/appdata org.wineFP.Platform.Gecko.appdata.xml
+      - appstream-compose --basename=org.wineFP.Platform.Gecko --prefix=${FLATPAK_DEST} --origin=flatpak org.wineFP.Platform.Gecko
+
+    sources:
+      - type: file
+        path: org.wineFP.Platform.Gecko.appdata.xml
+

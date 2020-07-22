@@ -1,0 +1,32 @@
+build-extension: true
+
+app-id: org.wineFP.Platform.Mono
+branch: 5.0
+
+runtime: org.wineFP.Platform
+runtime-version: 5.0
+sdk: org.wineFP.Sdk
+
+separate-locales: false
+appstream-compose: false
+
+modules:
+  - name: wine-mono
+    buildsystem: simple
+    build-commands:
+      - install -D --target-directory=${FLATPAK_DEST} wine-mono-*.msi
+    sources:
+      - type: file
+        url: https://dl.winehq.org/wine/wine-mono/5.0.0/wine-mono-5.0.0-x86.msi
+        sha256: 17da208645a82a5e45e84fc75c73a8440acda484411cb8fae8e9b72db9886cd5
+
+  - name: metainfo
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 --target-directory=${FLATPAK_DEST}/share/appdata org.wineFP.Platform.Mono.appdata.xml
+      - appstream-compose --basename=org.wineFP.Platform.Mono --prefix=${FLATPAK_DEST} --origin=flatpak org.wineFP.Platform.Mono
+
+    sources:
+      - type: file
+        path: org.wineFP.Platform.Mono.appdata.xml
+

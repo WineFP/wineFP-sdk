@@ -1,0 +1,262 @@
+build-runtime: true
+
+id: org.wineFP.Sdk
+id-platform: org.wineFP.Platform
+branch: 5.0
+
+runtime: org.freedesktop.Platform
+runtime-version: 18.08
+sdk: org.freedesktop.Sdk
+
+sdk-extensions:
+  - org.freedesktop.Sdk.Debug
+  - org.freedesktop.Sdk.Locale
+  - org.freedesktop.Sdk.Docs
+
+platform-extensions:
+  - org.freedesktop.Platform.Locale
+
+inherit-sdk-extensions:
+  - org.freedesktop.Sdk.Extension
+
+inherit-extensions:
+  - org.freedesktop.Platform.GL
+  - org.freedesktop.Platform.Timezones
+  - org.freedesktop.Platform.GStreamer
+  - org.freedesktop.Platform.VAAPI.Intel
+
+add-extensions:
+  org.wineFP.Sdk.Docs:
+    directory: share/runtime/docs
+    bundle: true
+    autodelete: true
+    no-autodownload: true
+
+  org.wineFP.Sdk.Extension:
+    directory: lib/sdk
+    version: 5.0
+    subdirectories: true
+    autodelete: true
+    no-autodownload: true
+
+  org.wineFP.Platform.Gecko:
+    directory: lib/gecko
+    version: 5.0
+    versions: 5.0
+    subdirectories: false
+    autodelete: false
+    no-autodownload: false
+
+  org.wineFP.Platform.Mono:
+    directory: lib/mono
+    version: 5.0
+    versions: 5.0
+    subdirectories: false
+    autodelete: false
+    no-autodownload: false
+
+  org.wineFP.Platform.Extension:
+    directory: lib/extension
+    version: 5.0
+    subdirectories: true
+    autodelete: true
+    no-autodownload: true
+
+  org.wineFP.Platform.Compat.i386:
+    directory: lib/i386-linux-gnu
+    version: 5.0
+    autodelete: true
+    add-ld-path: .
+
+  org.wineFP.Platform.Compat.i386.Debug:
+    directory: lib/debug/lib/i386-linux-gnu
+    version: 5.0
+    autodelete: true
+
+  org.freedesktop.Platform.GL32:
+    directory: lib/i386-linux-gnu/lib/GL
+    version: 1.6
+    versions: 1.6;1.4
+    add-ld-path: lib
+    subdirectories: true
+    autodelete: false
+    no-autodownload: true
+    merge-dirs: vulkan/icd.d;glvnd/egl_vendor.d
+    download-if: active-gl-driver
+    enable-if: active-gl-driver
+
+finish-args:
+  - --sdk=org.wineFP.Sdk//5.0
+  - --runtime=org.wineFP.Platform//5.0
+  - --allow=multiarch
+  - --env=PATH=/app/bin:/usr/bin:/usr/lib/i386-linux-gnu/wine/bin
+  - --env=XDG_DATA_DIRS=/app/share:/usr/share:/usr/share/runtime/share:/run/host/share
+  - --env=WINEDEBUG=-all
+  - --env=WINEPREFIX=/var/data/wine
+
+cleanup:
+  - /docs
+  - /man
+  - /share/man
+
+cleanup-commands:
+  - sh -x /usr/libexec/freedesktop-post.sh
+  - |
+    if [ -L /usr/lib/i386-linux-gnu ]; then
+      rm /usr/lib/i386-linux-gnu
+      mkdir -p /usr/lib/i386-linux-gnu
+    fi
+
+cleanup-platform:
+  - /docs
+  - /include
+  - /share/aclocal
+  - /share/pkgconfig
+  - /lib/pkgconfig
+
+cleanup-platform-commands:
+  - sh -x /usr/libexec/freedesktop-post.sh
+  - |
+    if [ -L /usr/lib/i386-linux-gnu ]; then
+      rm /usr/lib/i386-linux-gnu
+      mkdir -p /usr/lib/i386-linux-gnu
+    fi
+
+build-options:
+  cflags: -O2 -g -fstack-protector-strong -D_FORTIFY_SOURCE=2
+  cxxflags: -O2 -g -fstack-protector-strong -D_FORTIFY_SOURCE=2
+  ldflags: -fstack-protector-strong -Wl,-z,relro,-z,now
+  env:
+    V: '1'
+
+modules:
+  - name: platform-setup
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /usr/share/runtime/docs
+      - mkdir -p /usr/lib/sdk
+      - mkdir -p /usr/lib/extension
+      - mkdir -p /usr/lib/gecko
+      - mkdir -p /usr/lib/mono
+
+  - name: openldap
+    config-opts:
+      - --disable-static
+      - --disable-bdb
+      - --disable-hdb
+    sources:
+      # OpenLDAP required for Wine
+      # FTP isn't support in flatpak & flatpak-builder so we use he https mirror
+      # https://www.openldap.org/software/download/OpenLDAP/openldap-release/
+      - type: archive
+        url: https://www.openldap.org/software/download/OpenLDAP/openldap-release/openldap-2.4.46.tgz
+        sha256: 9a90dcb86b99ae790ccab93b7585a31fbcbeec8c94bf0f7ab0ca0a87ea0c4b2d
+
+  - name: cabextract
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://www.cabextract.org.uk/cabextract-1.9.1.tar.gz
+        sha256: afc253673c8ef316b4d5c29cc4aa8445844bee14afffbe092ee9469405851ca7
+
+  - name: unrar
+    buildsystem: simple
+    build-commands:
+      - make
+      - make install
+    sources:
+      - type: archive
+        url: https://www.rarlab.com/rar/unrarsrc-5.9.3.tar.gz
+        sha256: 28c176c29da86d7efe3cb9a227255d8340f761ba95969195982ec87c8eb2dd69
+
+  - name: wine-win64
+    only-arches:
+      - x86_64
+    config-opts:
+      - --enable-win64
+      - --disable-win16
+      - --disable-tests
+      - --with-x
+      - --with-ldap
+      - --without-cups
+      - --without-curses
+      - --without-capi
+      - --without-glu
+      - --without-gphoto
+      - --without-gsm
+      - --without-hal
+      - --without-netapi
+      - --without-opencl
+      - --without-pcap
+      - --without-udev
+      - --without-v4l
+    cleanup:
+      - /share/man
+      - /share/applications
+    sources:
+      - type: archive
+        url: https://dl.winehq.org/wine/source/5.0/wine-5.0.1.tar.xz
+        sha256: 12b13405c4bc0d6e1a3991c0b0542562669c9b7d8307f11ff75aa17378345894
+    post-install:
+      - rm -rf /usr/share/wine/gecko
+      - ln -s /usr/lib/gecko /usr/share/wine/gecko
+      - rm -rf /usr/share/wine/mono
+      - ln -s /usr/lib/mono /usr/share/wine/mono
+
+  - name: wine-win32
+    only-arches:
+      - i386
+    config-opts:
+      - --disable-win64
+      - --disable-win16
+      - --disable-tests
+      - --with-x
+      - --with-ldap
+      - --without-cups
+      - --without-curses
+      - --without-capi
+      - --without-glu
+      - --without-gphoto
+      - --without-gsm
+      - --without-hal
+      - --without-netapi
+      - --without-opencl
+      - --without-pcap
+      - --without-udev
+      - --without-v4l
+    cleanup:
+      - /bin/function_grep.pl
+      - /include
+      - /share/man
+      - /share/applications
+    sources:
+      - type: archive
+        url: https://dl.winehq.org/wine/source/5.0/wine-5.0.1.tar.xz
+        sha256: 12b13405c4bc0d6e1a3991c0b0542562669c9b7d8307f11ff75aa17378345894
+    post-install:
+      - rm -rf /usr/share/wine/gecko
+      - ln -s /usr/lib/gecko /usr/share/wine/gecko
+      - rm -rf /usr/share/wine/mono
+      - ln -s /usr/lib/mono /usr/share/wine/mono
+      - |
+      - mkdir -p /usr/lib/i386-linux-gnu/wine/bin
+      -
+        for i in /usr/bin/wine*; do
+          mv $i /usr/lib/i386-linux-gnu/wine/bin
+          ln -s "/usr/lib/i386-linux-gnu/wine/bin/$(basename $i)" $i
+        done
+
+  - name: metainfo
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /usr/share/appdata
+      - install org.wineFP.Platform.appdata.xml /usr/share/appdata
+      - install org.wineFP.Sdk.appdata.xml /usr/share/appdata
+      - appstream-compose --basename=org.wineFP.Platform --prefix=/usr --origin=flatpak org.wineFP.Platform
+      - appstream-compose --basename=org.wineFP.Sdk --prefix=/usr --origin=flatpak org.wineFP.Sdk
+    sources:
+      - type: file
+        path: org.wineFP.Sdk.appdata.xml
+      - type: file
+        path: org.wineFP.Platform.appdata.xml
+
